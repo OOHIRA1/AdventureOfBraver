@@ -14,6 +14,7 @@ public class CursorController : MonoBehaviour {
 	[SerializeField] private AudioClip[] _clips = new AudioClip[3];
 	[SerializeField] private GameObject _sceneManager = null;
 	private bool _cursorMoveFlag;											//カーソルを動かせるかどうかのフラグ(項目選択時・フェードイン中に動かせないようにするため)
+	private float[] _freezeTime = new float[2];												//ボタン入力を受け付けない時間（0:上 1:下）
 
 
 
@@ -22,6 +23,9 @@ public class CursorController : MonoBehaviour {
 		_buttonIndex = 1;
 		transform.position = new Vector3 ( transform.position.x, _buttons[_buttonIndex].transform.position.y, transform.position.z );
 		_cursorMoveFlag = false;
+		for (int i = 0; i < _freezeTime.Length; i++) {
+			_freezeTime [i] = 0f;
+		}
 	}
 	
 	// Update is called once per frame
@@ -35,9 +39,9 @@ public class CursorController : MonoBehaviour {
 	}
 
 
-	//---カーソルを動かす関数(キーボード操作)
+	//---カーソルを動かす関数(キーボード操作 or コントローラー操作)
 	void CursorMove() {
-		if (Input.GetKeyDown (KeyCode.W)) {
+		if (Input.GetAxis ("Vertical") > 0.1f && _freezeTime[0] <= 0f) {
 			_buttonIndex--;
 			if (_buttonIndex > -1) {
 				transform.position = new Vector3 (transform.position.x, _buttons [_buttonIndex].transform.position.y, transform.position.z);
@@ -46,8 +50,10 @@ public class CursorController : MonoBehaviour {
 			} else {
 				_buttonIndex = 0;
 			}
+			_freezeTime [0] = 1f;
+			_freezeTime [1] = 0f;
 		}
-		if (Input.GetKeyDown (KeyCode.S)) {
+		if (Input.GetAxis ("Vertical") < -0.1f && _freezeTime[1] <= 0f) {
 			_buttonIndex++;
 			if (_buttonIndex < _buttons.Length) {
 				transform.position = new Vector3 (transform.position.x, _buttons [_buttonIndex].transform.position.y, transform.position.z);
@@ -56,8 +62,10 @@ public class CursorController : MonoBehaviour {
 			} else {
 				_buttonIndex = 2;
 			}
+			_freezeTime [0] = 0f;
+			_freezeTime [1] = 1f;
 		}
-		if (Input.GetKeyDown (KeyCode.Return)) {
+		if (Input.GetKeyDown (KeyCode.JoystickButton0) || Input.GetKeyDown (KeyCode.Return)) {
 			_cursorMoveFlag = false;
 			_audio.clip = _clips [2];
 			_audio.Play ();
@@ -69,6 +77,14 @@ public class CursorController : MonoBehaviour {
 				Debug.Log ("ゲームの終了");
 				//Application.Quit ();		←アプリケーションの時の処理
 				UnityEditor.EditorApplication.isPlaying = false;
+			}
+		}
+		for (int i = 0; i < _freezeTime.Length; i++) {
+			if (_freezeTime [i] > 0f) {
+				_freezeTime [i] -= Time.deltaTime;
+			}
+			if (Input.GetAxis ("Vertical") > -0.1f && Input.GetAxis ("Vertical") < 0.1f) {
+				_freezeTime [i] = 0f;
 			}
 		}
 	}
