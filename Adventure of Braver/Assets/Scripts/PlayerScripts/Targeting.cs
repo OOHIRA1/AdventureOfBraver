@@ -5,11 +5,13 @@ using UnityEngine;
 public class Targeting : MonoBehaviour {
 
     public List<Transform> targets;
-    private Transform selectedTarget;
+    public Transform selectedTarget;
 
     private Transform myTransform;
 
     public bool isTargeting;
+
+    public EnemyHealth enemyHealth;
 
 	// Use this for initialization
 	void Start () {

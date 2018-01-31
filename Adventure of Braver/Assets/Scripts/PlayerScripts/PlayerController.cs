@@ -47,22 +47,26 @@ public class PlayerController : MonoBehaviour {
         bool running = Input.GetKey(KeyCode.LeftShift);
         Move(inputDir, running);
 
+        //ジャンプ
         if(Input.GetKeyDown(KeyCode.Space))
         {
             Jump();
         }
 
+
+        //ストレイフ
         if (targeting.isTargeting)
         {
             Strafe();
         }
 
-        //モーション
+        //アニメーション
         float animationSpeedPercent = ((running) ? currentSpeed / runSpeed : currentSpeed / walkSpeed * .5f);
         animator.SetFloat("speedPercent", animationSpeedPercent, speedSmoothTime, Time.deltaTime);
 
     }
 
+    //移動メソッド
     void Move( Vector2 inputDir, bool running)
     {
         if (inputDir != Vector2.zero)
@@ -89,6 +93,7 @@ public class PlayerController : MonoBehaviour {
         
     }
 
+    //ジャンプメソッド
     void Jump()
     {
         if(controller.isGrounded)
@@ -98,6 +103,7 @@ public class PlayerController : MonoBehaviour {
         }
     }
 
+    //ジャンプ時移動スピード変更するメソッド
     float GetModifiedSmoothTime( float smoothTime)
     {
         if( controller.isGrounded)
@@ -113,6 +119,7 @@ public class PlayerController : MonoBehaviour {
         return smoothTime / airControlPercent;
     }
 
+    //ストレイフメソッド
     void Strafe()
     {
         if ((Input.GetAxis("Horizontal")) > 0)
