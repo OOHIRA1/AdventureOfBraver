@@ -13,6 +13,7 @@ public class CursorController : MonoBehaviour {
 	[SerializeField] private AudioSource _audio = null;
 	[SerializeField] private AudioClip[] _clips = new AudioClip[3];
 	[SerializeField] private GameObject _sceneManager = null;
+	[SerializeField] private string[] _sceneName = new string[2];
 	private bool _cursorMoveFlag;											//カーソルを動かせるかどうかのフラグ(項目選択時・フェードイン中に動かせないようにするため)
 	private float[] _freezeTime = new float[2];												//ボタン入力を受け付けない時間（0:上 1:下）
 
@@ -70,9 +71,9 @@ public class CursorController : MonoBehaviour {
 			_audio.clip = _clips [2];
 			_audio.Play ();
 			if (transform.position.y == _buttons [0].transform.position.y) {
-				_sceneManager.GetComponent<SceneTransition> ().RequestSceneChange ("test");
+				_sceneManager.GetComponent<SceneTransition> ().RequestSceneChange (_sceneName[0]);
 			} else if (transform.position.y == _buttons [1].transform.position.y) {
-				_sceneManager.GetComponent<SceneTransition> ().RequestSceneChange ("Option");
+				_sceneManager.GetComponent<SceneTransition> ().RequestSceneChange (_sceneName[1]);
 			} else {
 				Debug.Log ("ゲームの終了");
 				//Application.Quit ();		←アプリケーションの時の処理
