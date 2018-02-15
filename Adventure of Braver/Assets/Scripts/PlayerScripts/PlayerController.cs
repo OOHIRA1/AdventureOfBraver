@@ -47,7 +47,12 @@ public class PlayerController : MonoBehaviour {
         Vector2 input = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
         Vector2 inputDir = input.normalized;
 
-        bool running = Input.GetButton("Dash");
+        bool running;
+        if( Input.GetAxis("Dash") > 0){
+            running = true;
+        } else {
+            running = false;
+        }
         Move(inputDir, running);
 
         //ジャンプ
@@ -55,7 +60,6 @@ public class PlayerController : MonoBehaviour {
         {
             Jump();
         }
-
 
         //ストレイフ
         if (targeting.isTargeting)
@@ -84,7 +88,6 @@ public class PlayerController : MonoBehaviour {
             transform.eulerAngles = Vector3.up * Mathf.SmoothDampAngle(transform.eulerAngles.y, targetRotation, ref turnSmoothVelocity, GetModifiedSmoothTime(turnSmoothTime));
         }
 
-        
         float targetSpeed = ((running) ? runSpeed : walkSpeed) * inputDir.magnitude;
         currentSpeed = Mathf.SmoothDamp(currentSpeed, targetSpeed, ref speedSmoothVelocity, GetModifiedSmoothTime(speedSmoothTime));
 

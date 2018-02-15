@@ -36,6 +36,7 @@ public class WandererAI : MonoBehaviour {
         if (dialogueTrigger.isTalking)
         {
             agent.isStopped = true;
+
             var lookPos = target.position - transform.position;
             lookPos.y = 0;
             var rotation = Quaternion.LookRotation(lookPos);
