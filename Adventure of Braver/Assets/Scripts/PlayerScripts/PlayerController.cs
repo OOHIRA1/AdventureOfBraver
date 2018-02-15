@@ -47,7 +47,7 @@ public class PlayerController : MonoBehaviour {
         Vector2 input = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
         Vector2 inputDir = input.normalized;
 
-        bool running = Input.GetKey(KeyCode.LeftShift);
+        bool running = Input.GetButton("Dash");
         Move(inputDir, running);
 
         //ジャンプ
@@ -69,7 +69,6 @@ public class PlayerController : MonoBehaviour {
         if( dialogueTrigger.isTalking){
             animationSpeedPercent = 0f;
         }
-
     }
 
     //移動メソッド
@@ -99,8 +98,6 @@ public class PlayerController : MonoBehaviour {
         {
             velocityY = 0;
         }
-
-        
     }
 
     //ジャンプメソッド
