@@ -28,6 +28,8 @@ public class PlayerController : MonoBehaviour {
 
     public float gravity = -12;
 
+    DialogueTrigger dialogueTrigger;
+
     // Use this for initialization
     void Start () {
         targeting = GetComponent<Targeting>();
@@ -35,11 +37,12 @@ public class PlayerController : MonoBehaviour {
         cameraT = Camera.main.transform;
         controller = GetComponent<CharacterController>();
         myTransform = transform;
+        dialogueTrigger = FindObjectOfType<DialogueTrigger>();
 	}
 	
 	// Update is called once per frame
 	void Update () {
-
+        
         //インプット
         Vector2 input = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
         Vector2 inputDir = input.normalized;
@@ -48,7 +51,7 @@ public class PlayerController : MonoBehaviour {
         Move(inputDir, running);
 
         //ジャンプ
-        if(Input.GetKeyDown(KeyCode.Space))
+        if(Input.GetAxis("Jump") > 0)
         {
             Jump();
         }
@@ -63,12 +66,19 @@ public class PlayerController : MonoBehaviour {
         //アニメーション
         float animationSpeedPercent = ((running) ? currentSpeed / runSpeed : currentSpeed / walkSpeed * .5f);
         animator.SetFloat("speedPercent", animationSpeedPercent, speedSmoothTime, Time.deltaTime);
+        if( dialogueTrigger.isTalking){
+            animationSpeedPercent = 0f;
+        }
 
     }
 
     //移動メソッド
     void Move( Vector2 inputDir, bool running)
     {
+        if (dialogueTrigger.isTalking)
+        {
+            return;
+        }
         if (inputDir != Vector2.zero)
         {
             float targetRotation = Mathf.Atan2(inputDir.x, inputDir.y) * Mathf.Rad2Deg + cameraT.eulerAngles.y;

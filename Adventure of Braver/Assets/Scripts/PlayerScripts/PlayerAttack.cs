@@ -11,18 +11,17 @@ public class PlayerAttack : MonoBehaviour {
     Targeting targeting;
     EnemyHealth enemyHealth;
 
-	void Start () {
-
+	void Start () 
+    {
         animator = GetComponent<Animator>();
         targeting = GetComponent<Targeting>();
-
 	}
 
     void Update()
     {
         attackCooldown -= Time.deltaTime;
 
-        if (Input.GetMouseButtonDown(0) && attackCooldown <= 0)
+        if (Input.GetAxis("Attack") > 0 && attackCooldown <= 0)
         {
             StartCoroutine("Attack");
         }
@@ -36,10 +35,10 @@ public class PlayerAttack : MonoBehaviour {
 
     IEnumerator Attack()
     {
-        yield return new WaitForSeconds(0);
-        GetEnemyHealth();
+        yield return new WaitForEndOfFrame();
+        //GetEnemyHealth();
         attackCooldown = attackDelay;
         animator.SetTrigger("Attack");
-        enemyHealth.TakeDamage( attackPower );
+        //enemyHealth.TakeDamage( attackPower );
     }
 }

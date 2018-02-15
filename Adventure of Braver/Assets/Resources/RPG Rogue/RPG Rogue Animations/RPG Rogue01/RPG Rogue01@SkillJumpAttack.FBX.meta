@@ -286,7 +286,7 @@ ModelImporter:
       name: SkillJumpAttack
       takeName: Take 001
       firstFrame: 0
-      lastFrame: 50
+      lastFrame: 11
       wrapMode: 1
       orientationOffsetY: 0
       level: 0

@@ -5,30 +5,41 @@ using UnityEngine;
 public class DialogueTrigger : MonoBehaviour {
 
     public Dialogue dialogue;
+    public bool isTalking;
+    [SerializeField]Camera dialogueCamera;
+    [SerializeField]Camera mainCamera;
 
-    private void OnTriggerEnter(Collider other)
+    private void Start()
     {
-        if( other.tag == "Player")
-        {
-            TriggerDialogue();
-        }
+        dialogueCamera.enabled = false;
+        mainCamera.enabled = true;
     }
 
-    private void OnTriggerExit(Collider other)
+    private void OnTriggerStay(Collider other)
     {
-        if( other.tag == "Player")
+        if( other.tag == "Player" && Input.GetAxis("Action") > 0)
         {
+            isTalking = true;
+            TriggerDialogue();
+        }
+
+        if( Input.GetAxis("Cancel") > 0){
+            isTalking = false;
             StopDialogue();
         }
     }
 
     public void TriggerDialogue()
     {
+        dialogueCamera.enabled = true;
+        mainCamera.enabled = false;
         FindObjectOfType<DialogueManager>().StartDialogue(dialogue);
     }
 
     public void StopDialogue()
     {
+        dialogueCamera.enabled = false;
+        mainCamera.enabled = true;
         FindObjectOfType<DialogueManager>().EndDialogue();
     }
 }
