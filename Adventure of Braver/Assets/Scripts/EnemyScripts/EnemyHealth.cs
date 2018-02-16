@@ -2,6 +2,9 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+//機能：エネミーの体力を管理するスクリプト
+//
+//アタッチ：エネミーにアタッチ
 public class EnemyHealth : MonoBehaviour {
 
     [SerializeField] private float maxHealth;
