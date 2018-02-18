@@ -8,7 +8,7 @@ using UnityEngine.AI;
 //アタッチ：エネミーにアタッチ
 public class EnemyController : MonoBehaviour
 {
-	public float lookRadius = 10f;
+	public float lookRadius = 10f;	//ゴブリンの見える範囲
 	const float locomotionAnimationSmootTime = .05f;
 
     [SerializeField]
@@ -17,8 +17,8 @@ public class EnemyController : MonoBehaviour
     NavMeshAgent agent;
 	Animator anim;
 
-	public float _viewAngle;
-	public GameObject _target;
+	[SerializeField] float _viewAngle = ( float )3.14 / 2;	//視野角
+	public GameObject _targetForGizmos;					//ターゲット（ギズモ用）
 
 	// Use this for initialization
 	void Start()
@@ -33,31 +33,31 @@ public class EnemyController : MonoBehaviour
 	void Update()
 	{
 		float distance = Vector3.Distance(target.position, transform.position);
-
-		Vector3 a = transform.position + transform.forward * lookRadius;
-		Vector3 b = a + transform.right * lookRadius * Mathf.Tan (_viewAngle / 2);
-		Vector3 c = a + (-transform.right) * lookRadius * Mathf.Tan (_viewAngle / 2);
-		Vector3 pos = _target.transform.position - transform.position;
-		Vector3 localpos = transform.InverseTransformPoint (_target.transform.position);
-
-		/*if (distance <= lookRadius)
-		{*/
-		if (localpos.z < transform.InverseTransformPoint (a).z && localpos.z >= transform.InverseTransformPoint (c).z / transform.InverseTransformPoint (c).x * localpos.x && localpos.z >= transform.InverseTransformPoint (b).z / transform.InverseTransformPoint (b).x * localpos.x) {
-
+		//視野に使用するベクトル------------------
+		Vector3 forwardPos = transform.position + transform.forward * lookRadius;
+		Vector3 rightForwardPos = forwardPos + transform.right * lookRadius * Mathf.Tan (_viewAngle / 2);
+		Vector3 leftForwardPos = forwardPos + (-transform.right) * lookRadius * Mathf.Tan (_viewAngle / 2);
+		Vector3 localTargetPos = transform.InverseTransformPoint (target.transform.position);					//ローカル座標から見たtargetの座標
+		//----------------------------------------------
+		//視野内にtargetがいたら目的地をtargetに設定する処理---------------------------------
+		if (   Vector3.Cross (localTargetPos, transform.InverseTransformPoint (leftForwardPos)).y < 0
+			&& Vector3.Cross (localTargetPos - transform.InverseTransformPoint(leftForwardPos), transform.InverseTransformPoint(rightForwardPos) - transform.InverseTransformPoint(leftForwardPos)).y < 0
+			&& Vector3.Cross (localTargetPos - transform.InverseTransformPoint(rightForwardPos), Vector3.zero - transform.InverseTransformPoint(rightForwardPos)).y < 0
+		) {
             enemyNav.MoveToTarget(target.position);
 
 			if (distance <= agent.stoppingDistance)
 			{
 				FaceTarget();
-				Debug.Log ("a");
 			}
 		}
-
+		//---------------------------------------------------------------------------------
 		//walk
 		float speedPercent = agent.velocity.magnitude / agent.speed;
 		anim.SetFloat("speedPercent", speedPercent, locomotionAnimationSmootTime, Time.deltaTime);
 
 	}
+
 
 	//--プレイヤー（target）の方向を向く関数
 	void FaceTarget()
@@ -72,31 +72,37 @@ public class EnemyController : MonoBehaviour
 	void OnDrawGizmosSelected()
 	{
 		//Gizmos.color = Color.red;
-		Gizmos.color = Color.blue;
 		//Gizmos.DrawWireSphere(transform.position, lookRadius);
-		Vector3 a = transform.position + transform.forward * lookRadius;
-		Vector3 b = a + transform.right * lookRadius * Mathf.Tan (_viewAngle / 2);
-		Vector3 c = a + (-transform.right) * lookRadius * Mathf.Tan (_viewAngle / 2);
-		Vector3 pos = _target.transform.position - transform.position;
-		Vector3 localpos = transform.InverseTransformPoint (_target.transform.position);
-		/*if (localpos.z > 0 && localpos.z < transform.InverseTransformPoint( a ).z
-			&& localpos.x > transform.InverseTransformPoint( c ).x && localpos.x < transform.InverseTransformPoint( b ).x ) {
-			Gizmos.color = Color.red;
-		}*/
-		/*方法１：領域
-		if (localpos.z < transform.InverseTransformPoint (a).z && localpos.z >= transform.InverseTransformPoint (c).z / transform.InverseTransformPoint (c).x * localpos.x && localpos.z >= transform.InverseTransformPoint (b).z / transform.InverseTransformPoint (b).x * localpos.x) {
-			Gizmos.color = Color.red;
-		}*/
-		//方法２：外積
-		if (Vector3.Cross (localpos, transform.InverseTransformPoint (c)).y < 0 && Vector3.Cross (localpos - transform.InverseTransformPoint(c), transform.InverseTransformPoint(b) - transform.InverseTransformPoint(c)).y < 0 && Vector3.Cross (localpos - transform.InverseTransformPoint(b), Vector3.zero - transform.InverseTransformPoint(b)).y < 0) {
+		Gizmos.color = Color.blue;
+		//視野ギズモに使用するベクトル------------------
+		Vector3 forwardPos = transform.position + transform.forward * lookRadius;
+		Vector3 rightForwardPos = forwardPos + transform.right * lookRadius * Mathf.Tan (_viewAngle / 2);
+		Vector3 leftForwardPos = forwardPos + (-transform.right) * lookRadius * Mathf.Tan (_viewAngle / 2);
+		Vector3 localTargetPos = transform.InverseTransformPoint (_targetForGizmos.transform.position);					//ローカル座標から見た_targetの座標
+		//---------------------------------------------
+		//視野内に_targetが入っているかの処理---------------------------
+		//方法１：領域
+		/*
+		if (   localTargetPos.z < transform.InverseTransformPoint (forwardPos).z
+			&& localTargetPos.z >= transform.InverseTransformPoint (leftForwardPos).z / transform.InverseTransformPoint (leftForwardPos).x * localTargetPos.x
+			&& localTargetPos.z >= transform.InverseTransformPoint (rightForwardPos).z / transform.InverseTransformPoint (rightForwardPos).x * localTargetPos.x
+		) {
 			Gizmos.color = Color.red;
 		}
-			/*if (pos.magnitude <= lookRadius) {
+		*/
+		//方法２：外積
+		if (   Vector3.Cross (localTargetPos, transform.InverseTransformPoint (leftForwardPos)).y < 0
+			&& Vector3.Cross (localTargetPos - transform.InverseTransformPoint(leftForwardPos), transform.InverseTransformPoint(rightForwardPos) - transform.InverseTransformPoint(leftForwardPos)).y < 0
+			&& Vector3.Cross (localTargetPos - transform.InverseTransformPoint(rightForwardPos), Vector3.zero - transform.InverseTransformPoint(rightForwardPos)).y < 0
+		) {
 			Gizmos.color = Color.red;
-		}*/
-		Gizmos.DrawLine( transform.position, a );
-		Gizmos.DrawLine ( b , c );
-		Gizmos.DrawLine ( transform.position, b );
-		Gizmos.DrawLine ( transform.position, c );
+		}
+		//----------------------------------------------------------------
+		//ギズモの描画---------------------------------------------
+		Gizmos.DrawLine( transform.position, forwardPos );
+		Gizmos.DrawLine ( rightForwardPos , leftForwardPos );
+		Gizmos.DrawLine ( transform.position, rightForwardPos );
+		Gizmos.DrawLine ( transform.position, leftForwardPos );
+		//---------------------------------------------------------
 	}
 }
