@@ -7,11 +7,12 @@ using UnityEngine;
 //アタッチ：エネミーにアタッチ
 public class EnemyHealth : MonoBehaviour {
 
-    [SerializeField] private float maxHealth;
+    [SerializeField] private float maxHealth = 3;
     public float currentHealth { get; private set; }
     public bool isDead = false;
 
-	void Awake () {
+	void Awake ()
+	{
         currentHealth = maxHealth;
     }
 
