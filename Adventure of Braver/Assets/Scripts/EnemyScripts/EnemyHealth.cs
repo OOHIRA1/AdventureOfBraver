@@ -21,15 +21,14 @@ public class EnemyHealth : MonoBehaviour {
         currentHealth -= amount;
         Debug.Log(transform.name + " takes " + amount + " damage.");
 
-        if (currentHealth <= 0)
-        {
-            isDead = true;
-            Die();
-        }
+		if (currentHealth <= 0) {
+			isDead = true;
+			Die ();
+		}
     }
 
     void Die()
     {
-        Destroy(gameObject, 1f);
+        Destroy(gameObject, 20f);
     }
 }

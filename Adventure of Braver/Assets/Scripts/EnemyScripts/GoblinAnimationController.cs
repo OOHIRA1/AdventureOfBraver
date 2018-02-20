@@ -5,34 +5,46 @@ using UnityEngine.AI;
 
 //機能：ゴブリンのアニメーションを管理するスクリプト
 //
-//アタッチ：ゴブリンにアタッチ
+//アタッチ：ゴブリンにアタッチ(EnemyController.csをアタッチすることで自動でアタッチされる)
 [RequireComponent(typeof(Animator))]
 public class GoblinAnimationController : MonoBehaviour
 {
 	const float locomotionAnimationSmootTime = .05f;
+	const float ATTACK_INTERVAL = 5f;					//攻撃インターバル
+	const int ATTACK_TYPE = 3;							//攻撃のバリエーション数
 
 	Animator _animator;
 	NavMeshAgent _agent;
+	float _attackTime;		//攻撃インターバル
 
 	// Use this for initialization
 	void Start ()
 	{
 		_animator = GetComponent<Animator> ();
 		_agent = GetComponent<NavMeshAgent>();
+		_attackTime = 0;
 	}
 
 	// Update is called once per frame
 	void Update()
 	{
-		//walk
-		float speedPercent = _agent.velocity.magnitude / _agent.speed;
-		_animator.SetFloat("speedPercent", speedPercent, locomotionAnimationSmootTime, Time.deltaTime);
+		if (_attackTime > 0) {
+			_attackTime -= Time.deltaTime;
+		}
 	}
 
 
 	//---------------------
 	//--public関数
 	//---------------------
+	//--移動・待機アニメーションをする関数
+	public void MoveAnim( float speedPercent )
+	{
+		_animator.SetFloat("speedPercent", speedPercent, locomotionAnimationSmootTime, Time.deltaTime);
+	}
+
+
+
 	//--攻撃待機状態のオンオフをする関数
 	public void ChangeAttacking( bool x )
 	{
@@ -40,26 +52,31 @@ public class GoblinAnimationController : MonoBehaviour
 	}
 
 
+	//--攻撃待機状態かどうかを確認する関数
+	public bool CheckAttacking( )
+	{
+		return _animator.GetBool ("attacking");
+	}
+
 	//--攻撃アニメーションをする関数
 	public void AttackAnim( )
 	{
-		if (!_animator.GetBool ("attacking")) return;
+		if (!CheckAttacking()) return;
+		if (_attackTime > 0) return;
+		//if (_animator.GetBool ("block")) return; block値がtrueでもattackのトリガーがtrueになっていたらparametersの順番のせいで攻撃をしてしまうのでtransitionのconditionsで操作
 
-		int n = Random.Range (1, 4);
-		switch (n) 
-		{
-		case 1:
-			_animator.SetTrigger ("attack1");
-			break;
-		case 2:
-			_animator.SetTrigger ("attack2");
-			break;
-		case 3:
-			_animator.SetTrigger ("attack3");
-			break;
-		default :
-			Debug.LogError ("想定外の処理がされました。");
-			break;
+		int n = Random.Range (1, (ATTACK_TYPE + 1) + 3);
+		string[] attack = { "attack1", "attack2", "attack3" };
+		for (int i = 0; i < attack.Length; i++) {
+			if (n > attack.Length) {	//attack1の確立を上げるための処理　＆　for文処理短縮化
+				_animator.SetTrigger ("attack1");
+				_attackTime = ATTACK_INTERVAL;
+				break;
+			}
+			if (i + 1 == n) {
+				_animator.SetTrigger (attack [i]);
+				_attackTime = ATTACK_INTERVAL;
+			}
 		}
 	}
 
@@ -68,6 +85,13 @@ public class GoblinAnimationController : MonoBehaviour
 	public void ChangeBlock( bool x )
 	{
 		_animator.SetBool ("block", x);
+	}
+
+
+	//--防御状態かどうかを確認する関数
+	public bool CheckBlock( ) 
+	{
+		return _animator.GetBool ("block");
 	}
 
 
@@ -83,7 +107,7 @@ public class GoblinAnimationController : MonoBehaviour
 	//--死亡アニメーションをする関数
 	public void DeadAnim()
 	{
-		_animator.SetBool ("death", true);
+		_animator.SetTrigger("death");
 	}
 	//-----------------------------------
 	//-----------------------------------
