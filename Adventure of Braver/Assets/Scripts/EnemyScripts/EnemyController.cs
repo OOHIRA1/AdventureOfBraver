@@ -10,8 +10,8 @@ using UnityEngine.AI;
 [RequireComponent(typeof(NavMeshAgent))]
 [RequireComponent(typeof(GoblinAnimationController))]
 public class EnemyController : MonoBehaviour {
-	public float lookRadius = 10f;	//ゴブリンの見える範囲
 	const float locomotionAnimationSmootTime = .05f;
+
 
     [SerializeField]
 	Transform _target;
@@ -19,11 +19,16 @@ public class EnemyController : MonoBehaviour {
     NavMeshAgent _agent;
 	GoblinAnimationController _animController;
 	EnemyHealth _enemyHealth;
+	EnemyGenerator _enemyGenerator;
 
+	[SerializeField] float _lookRadius = 10f;		//ゴブリンの見える範囲
+	[SerializeField] float _assistRadius = 12f;		//ゴブリンの加勢する範囲
 	[SerializeField] float _viewAngle = ( float )3.14 / 2;	//視野角
 	public GameObject _targetForGizmos;					//ターゲット（ギズモ用）
 	bool _lockOn;										//プレイヤーをロックオンしているかどうかのフラグ
 	bool _death;										//死亡しているかどうか
+	[SerializeField] List<GameObject> _goblinList = new List<GameObject>( );			//他のゴブリン
+
 
 	// Use this for initialization
 	void Start()
@@ -33,14 +38,17 @@ public class EnemyController : MonoBehaviour {
         _agent = GetComponent<NavMeshAgent>();
 		_animController = GetComponent<GoblinAnimationController>();
 		_enemyHealth = GetComponent<EnemyHealth> ();
+		_enemyGenerator = GameObject.Find ("EnemyGenerator").GetComponent<EnemyGenerator> ();
 		_lockOn = false;
 		_death = false;
+		_goblinList = _enemyGenerator.GetGoblinList( );
 	}
 
 	// Update is called once per frame
 	void Update()
 	{
 		Act ();
+		//UpdateGoblinList ();
 	}
 
 
@@ -51,26 +59,51 @@ public class EnemyController : MonoBehaviour {
 		//_targetの位置に移動する処理-------------------------------------
 		if (!_animController.CheckAttacking () ) {
 			if (!_lockOn) {		//ロックオン前処理
-				ActInField ("MoveToTarget", _target.position);
-				if (distance <= lookRadius / 2) {
-					_lockOn = true;
+				//視野に使用するベクトル------------------
+				Vector3 forwardPos = transform.position + transform.forward * _lookRadius;
+				Vector3 rightForwardPos = forwardPos + transform.right * _lookRadius * Mathf.Tan (_viewAngle / 2);
+				Vector3 leftForwardPos = forwardPos + (-transform.right) * _lookRadius * Mathf.Tan (_viewAngle / 2);
+				Vector3 localTargetPos = transform.InverseTransformPoint (_target.transform.position);					//ローカル座標から見たtargetの座標
+				//----------------------------------------------
+
+				//視野内にtargetがいたら行動する処理---------------------------------
+				if (Vector3.Cross (localTargetPos, transform.InverseTransformPoint (leftForwardPos)).y < 0
+					&& Vector3.Cross (localTargetPos - transform.InverseTransformPoint (leftForwardPos), transform.InverseTransformPoint (rightForwardPos) - transform.InverseTransformPoint (leftForwardPos)).y < 0
+					&& Vector3.Cross (localTargetPos - transform.InverseTransformPoint (rightForwardPos), Vector3.zero - transform.InverseTransformPoint (rightForwardPos)).y < 0)
+				{
+					_enemyNav.MoveToTarget (_target.position);
+					if (distance <= _lookRadius / 2) {
+						_lockOn = true;
+					}
 				}
+				//---------------------------------------------------------------------------------
 			} else { 			//ロックオン時処理			
-				if (distance <= lookRadius / 2) {
+				if (distance <= _lookRadius / 2) {
 					_enemyNav.MoveToTarget (_target.position);
 				} else {
 					_lockOn = false;
 				}
 			}
+			for (int i = 0; i < _goblinList.Count; i++) {
+				if (_goblinList[i].GetComponent<EnemyController> ()._animController.CheckAttacking ()) {
+					if (distance <= _assistRadius) {
+						_enemyNav.MoveToTarget (_target.position);
+						break;
+					}
+				}
+			}
 		}
 		//---------------------------------------------------------------
-			
+
+		//至近距離時の処理---------------------------------------------------------
 		if (distance <= _agent.stoppingDistance) {
-			FaceTarget ();
+			//FaceTarget ();
+			ActInField( "FaceTarget", null );	//視野内にいる時のみ向きを変える
 			_animController.ChangeAttacking (true);
 		} else {
 			_animController.ChangeAttacking (false);
 		}
+		//------------------------------------------------------------------------
 
 		//walk・idle・runアニメーション処理---------------------------------
 		float speedPercent = _agent.velocity.magnitude / _agent.speed;
@@ -123,13 +156,13 @@ public class EnemyController : MonoBehaviour {
 	}
 
 
-	//--視野内に_targetがいたらfunctionName関数を呼ぶ関数
+	//--視野内に_targetがいたらfunctionName関数を呼ぶ関数(現在未使用)
 	void ActInField( string functionName, object value )
 	{
 		//視野に使用するベクトル------------------
-		Vector3 forwardPos = transform.position + transform.forward * lookRadius;
-		Vector3 rightForwardPos = forwardPos + transform.right * lookRadius * Mathf.Tan (_viewAngle / 2);
-		Vector3 leftForwardPos = forwardPos + (-transform.right) * lookRadius * Mathf.Tan (_viewAngle / 2);
+		Vector3 forwardPos = transform.position + transform.forward * _lookRadius;
+		Vector3 rightForwardPos = forwardPos + transform.right * _lookRadius * Mathf.Tan (_viewAngle / 2);
+		Vector3 leftForwardPos = forwardPos + (-transform.right) * _lookRadius * Mathf.Tan (_viewAngle / 2);
 		Vector3 localTargetPos = transform.InverseTransformPoint (_target.transform.position);					//ローカル座標から見たtargetの座標
 		//----------------------------------------------
 
@@ -145,14 +178,20 @@ public class EnemyController : MonoBehaviour {
 	}
 
 
+	//--_goblinListを更新する関数(なくてもいいかも)
+	void UpdateGoblinList() {
+		_goblinList = _enemyGenerator.GetGoblinList( );
+	}
+
+
 	//選択時lookRadiusをギズモで表示する関数
 	void OnDrawGizmosSelected()
 	{
 		Gizmos.color = Color.blue;
 		//視野ギズモに使用するベクトル------------------
-		Vector3 forwardPos = transform.position + transform.forward * lookRadius;
-		Vector3 rightForwardPos = forwardPos + transform.right * lookRadius * Mathf.Tan (_viewAngle / 2);	
-		Vector3 leftForwardPos = forwardPos + (-transform.right) * lookRadius * Mathf.Tan (_viewAngle / 2);
+		Vector3 forwardPos = transform.position + transform.forward * _lookRadius;
+		Vector3 rightForwardPos = forwardPos + transform.right * _lookRadius * Mathf.Tan (_viewAngle / 2);	
+		Vector3 leftForwardPos = forwardPos + (-transform.right) * _lookRadius * Mathf.Tan (_viewAngle / 2);
 		Vector3 localTargetPos = transform.InverseTransformPoint (_targetForGizmos.transform.position);					//ローカル座標から見た_targetの座標
 		//---------------------------------------------
 		if (!_lockOn) {
@@ -175,7 +214,7 @@ public class EnemyController : MonoBehaviour {
 			//----------------------------------------------------------------
 		} else {
 			float distance = Vector3.Distance (_targetForGizmos.transform.position, transform.position);
-			if (distance <= lookRadius / 2) {
+			if (distance <= _lookRadius / 2) {
 				Gizmos.color = Color.red;
 			}
 		}
@@ -187,8 +226,10 @@ public class EnemyController : MonoBehaviour {
 			Gizmos.DrawLine (transform.position, rightForwardPos);
 			Gizmos.DrawLine (transform.position, leftForwardPos);
 		} else {
-			Gizmos.DrawWireSphere (transform.position, lookRadius / 2);
+			Gizmos.DrawWireSphere (transform.position, _lookRadius / 2);
 		}
+		Gizmos.color = Color.green;
+		Gizmos.DrawWireSphere ( transform.position, _assistRadius );
 		//---------------------------------------------------------
 	}
 }
