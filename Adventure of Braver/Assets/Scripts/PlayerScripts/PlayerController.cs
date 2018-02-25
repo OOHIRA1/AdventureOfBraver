@@ -5,7 +5,7 @@ using UnityEngine;
 public class PlayerController : MonoBehaviour {
 
     [SerializeField]
-    float walkSpeed, runSpeed, jumpHeight, strafeSpeed;
+    float walkSpeed = 0, runSpeed = 0, jumpHeight = 0, strafeSpeed = 0;
 
     [Range(0, 1)]
     public float airControlPercent;

@@ -81,6 +81,7 @@ public class FieldOfView : MonoBehaviour {
 	//---------------------------
 	//--視野内にtargetがいるかどうか判定する関数
 	public bool IsInFieldOfView( Transform target ) {
+		if (!target) return false;
 		bool flag = false;
 		//視野に使用するベクトル-----------------------------------------------------------------------------------
 		Vector3 forwardPos = transform.position + transform.forward * _lookRadius;

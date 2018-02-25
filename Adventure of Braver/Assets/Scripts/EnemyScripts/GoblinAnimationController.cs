@@ -68,7 +68,7 @@ public class GoblinAnimationController : MonoBehaviour
 		int n = Random.Range (1, (ATTACK_TYPE + 1) + 3);
 		string[] attack = { "attack1", "attack2", "attack3" };
 		for (int i = 0; i < attack.Length; i++) {
-			if (n > attack.Length) {	//attack1の確立を上げるための処理　＆　for文処理短縮化
+			if (n > attack.Length) {	//attack1の確立を上げるための処理
 				_animator.SetTrigger ("attack1");
 				_attackTime = ATTACK_INTERVAL;
 				break;
@@ -76,6 +76,7 @@ public class GoblinAnimationController : MonoBehaviour
 			if (i + 1 == n) {
 				_animator.SetTrigger (attack [i]);
 				_attackTime = ATTACK_INTERVAL;
+				break;
 			}
 		}
 	}

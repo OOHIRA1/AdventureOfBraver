@@ -6,6 +6,7 @@ using UnityEngine;
 //
 //アタッチ：エネミーにアタッチ
 public class EnemyHealth : MonoBehaviour {
+	const float DELETE_TIME = 20f;		//死亡後Deleteするまでの時間 
 
     [SerializeField] private float maxHealth = 3;
     public float currentHealth { get; private set; }
@@ -29,6 +30,6 @@ public class EnemyHealth : MonoBehaviour {
 
     void Die()
     {
-        Destroy(gameObject, 20f);
+		Destroy(gameObject, DELETE_TIME);
     }
 }

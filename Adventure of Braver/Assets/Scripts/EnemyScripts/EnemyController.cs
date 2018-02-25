@@ -25,8 +25,18 @@ public class EnemyController : MonoBehaviour {
 
 	[SerializeField] float _assistRadius = 12f;											//ゴブリンの加勢する範囲
 	bool _lockOn;																		//プレイヤーをロックオンしているかどうかのフラグ
-	[SerializeField] float LockOnRadius;												//ロックオンする範囲
+	[SerializeField] float _lockOnRadius;												//ロックオンする範囲
 	[SerializeField] List<GameObject> _goblinList = new List<GameObject>( );			//他のゴブリンのリスト
+	Transform _findedBomb;																	//ゴブリンが見つけた爆弾(フィールド上にある爆弾を入れる変数)
+
+	//------------------------------------
+	//セッター
+	//------------------------------------
+	public void SetFindedBomb( Transform x ) {
+		_findedBomb = x;
+	}
+	//------------------------------------
+	//------------------------------------
 
 
 	// Use this for initialization
@@ -43,8 +53,9 @@ public class EnemyController : MonoBehaviour {
 			_fieldOfView.SetTarget ( _target );
 		}
 		_lockOn = false;
-		LockOnRadius = _fieldOfView.GetLookRadius () / 2;
+		_lockOnRadius = _fieldOfView.GetLookRadius () / 2;
 		_goblinList = _enemyGenerator.GetGoblinList( );
+		_findedBomb = null;
 	}
 
 	// Update is called once per frame
@@ -60,18 +71,19 @@ public class EnemyController : MonoBehaviour {
 	{
 		float distance = Vector3.Distance(_target.position, transform.position);
 		//_targetの位置に移動する処理----------------------------------------------------
-		if (!_animController.CheckAttacking () ) {
+		if (!_animController.CheckAttacking () && !_findedBomb) {	//戦闘待機状態では移動しない＆爆弾があるときは爆弾退避を優先
 			if (!_lockOn) {		//ロックオン前処理
 				//視野内に_targetがいたら行動する処理-----------
 				if (_fieldOfView.IsInFieldOfView (_target)) {
 					_enemyNav.MoveToTarget (_target.position);
-					if (distance <= LockOnRadius) {
+					if (distance <= _lockOnRadius) {
 						_lockOn = true;
 					}
 				}
 				//---------------------------------------------
 			} else { 			//ロックオン時処理			
-				if (distance <= LockOnRadius) {
+				if (distance <= _lockOnRadius) {
+					FaceTarget (_target);	//向きを変えないと移動しないことがある(爆弾使用時)ので向きを変える処理
 					_enemyNav.MoveToTarget (_target.position);
 				} else {
 					_lockOn = false;
@@ -93,17 +105,17 @@ public class EnemyController : MonoBehaviour {
 
 		//至近距離時の処理---------------------------------------------------------
 		if (distance <= _agent.stoppingDistance) {
-			if (_fieldOfView.IsInFieldOfView ( _target )) {	//視野内にいる時のみ向きを変える
-				FaceTarget ();
-			}
+			if (_fieldOfView.IsInFieldOfView ( _target )) {	//視野内にいる時のみ向きを変え、攻撃待機状態に
+				FaceTarget (_target);
 			_animController.ChangeAttacking (true);
+			}
 		} else {
 			_animController.ChangeAttacking (false);
 		}
 		//------------------------------------------------------------------------
 
 		//walk・idle・runアニメーション処理---------------------------------
-		float speedPercent = _agent.velocity.magnitude / _agent.speed;
+		float speedPercent = _agent.velocity.magnitude * 5 / _agent.speed;
 		_animController.MoveAnim ( speedPercent );
 		//---------------------------------------------------
 
@@ -138,13 +150,39 @@ public class EnemyController : MonoBehaviour {
 		if (Input.GetKeyDown (KeyCode.Alpha0)) {	//デバッグ用ダメージ処理
 			_enemyHealth.TakeDamage (1f);
 		}
+
+		//爆弾を見たら逃げる処理----------------
+		//※逃げてる途中で爆弾がなくなったらどうなるか要検証
+		if (Input.GetKeyDown (KeyCode.B) && _fieldOfView.IsInFieldOfView (_target)) {
+			SetFindedBomb (_target);	//デバッグ用として_targetを爆弾とみなす（のちに外部のスクリプトから爆弾をセットする処理を記述）
+		}
+		if (_findedBomb) {
+			if (_fieldOfView.IsInFieldOfView (_findedBomb) && !_animController.CheckAttacking ()) {	//攻撃状態じゃないときに爆弾を見つけたら逃げる
+				float escapeDistance = 20;
+				Vector3 dir = transform.position - _findedBomb.position;
+				if (dir == Vector3.zero) {	//dirが零ベクトルだった時の処理
+					dir = Vector3.forward;
+				}
+				_enemyNav.MoveToTarget (_findedBomb.position + dir.normalized * escapeDistance);
+			}
+			if (_agent.velocity.magnitude <= 0) {	//逃げた後爆弾のあった方向を向く処理
+				FaceTarget (_findedBomb);
+				Vector3 vecA = transform.InverseTransformDirection ((_findedBomb.position - transform.position).normalized);
+				Vector3 vecB = transform.InverseTransformDirection (transform.forward);
+				if (Vector3.Angle (vecA, vecB) <= 1.0f) {
+					SetFindedBomb (null);
+				}
+			}
+		}
+		//-------------------------------------
 	}
 
 
-	//--プレイヤー（target）の方向を向く関数
-	void FaceTarget()
+	//--targetの方向を向く関数
+	void FaceTarget( Transform target )
 	{
-		Vector3 direction = (_target.position - transform.position).normalized;
+		if (!target) return;	//ターゲットを見失ったら戻る
+		Vector3 direction = (target.position - transform.position).normalized;
 		Quaternion lookRotation = Quaternion.LookRotation (new Vector3 (direction.x, 0, direction.z));
 		transform.rotation = Quaternion.Slerp (transform.rotation, lookRotation, Time.deltaTime * 5f);
 	}
@@ -164,7 +202,7 @@ public class EnemyController : MonoBehaviour {
 		if (_lockOn) {
 			_fieldOfView.SetDrawGizmos (false);		//視野ギズモ非表示
 			Gizmos.color = Color.red;
-			Gizmos.DrawWireSphere (transform.position, LockOnRadius);
+			Gizmos.DrawWireSphere (transform.position, _lockOnRadius);
 		} else {
 			if (_fieldOfView) {		//プレビュー前は_fieldOfViewの参照が取れていないので処理しない
 				_fieldOfView.SetDrawGizmos (true);

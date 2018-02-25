@@ -19,7 +19,7 @@ public class EnemyNav : MonoBehaviour
     }
 
 
-	//--移動先の目的地点をtargetPasに変更する関数
+	//--移動先の目的地点をtargetPosに変更する関数
     public void MoveToTarget( Vector3 targetPos)
     {
         navAgent.SetDestination(targetPos);
