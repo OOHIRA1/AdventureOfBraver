@@ -52,7 +52,7 @@ public class FieldOfView : MonoBehaviour {
 
 
 	//--選択時視野ギズモ表示する関数
-	void OnDrawGizmosSelected() {
+	void OnDrawGizmos() {
 		if (!_drawGismos) return;
 
 		Gizmos.color = Color.blue;

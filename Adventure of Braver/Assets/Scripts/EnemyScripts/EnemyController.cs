@@ -10,6 +10,7 @@ using UnityEngine.AI;
 [RequireComponent(typeof(NavMeshAgent))]
 [RequireComponent(typeof(GoblinAnimationController))]
 [RequireComponent(typeof(FieldOfView))]
+[RequireComponent(typeof(EnemySoundReaction))]
 public class EnemyController : MonoBehaviour {
 	const float locomotionAnimationSmootTime = .05f;
 
@@ -22,6 +23,7 @@ public class EnemyController : MonoBehaviour {
 	GoblinAnimationController _animController;
 	EnemyGenerator _enemyGenerator;
 	FieldOfView _fieldOfView;
+	EnemySoundReaction _soundReaction;
 
 	[SerializeField] float _assistRadius = 12f;											//ゴブリンの加勢する範囲
 	bool _lockOn;																		//プレイヤーをロックオンしているかどうかのフラグ
@@ -52,6 +54,7 @@ public class EnemyController : MonoBehaviour {
 		if (_target) {	//視野表示のターゲットを_targetに変更
 			_fieldOfView.SetTarget ( _target );
 		}
+		_soundReaction = GetComponent<EnemySoundReaction> ();
 		_lockOn = false;
 		_lockOnRadius = _fieldOfView.GetLookRadius () / 2;
 		_goblinList = _enemyGenerator.GetGoblinList( );
@@ -151,7 +154,7 @@ public class EnemyController : MonoBehaviour {
 			_enemyHealth.TakeDamage (1f);
 		}
 
-		//爆弾を見たら逃げる処理----------------
+		//爆弾を見たら逃げる処理---------------------------------------------------------------------------------------------------------
 		//※逃げてる途中で爆弾がなくなったらどうなるか要検証
 		if (Input.GetKeyDown (KeyCode.B) && _fieldOfView.IsInFieldOfView (_target)) {
 			SetFindedBomb (_target);	//デバッグ用として_targetを爆弾とみなす（のちに外部のスクリプトから爆弾をセットする処理を記述）
@@ -174,7 +177,33 @@ public class EnemyController : MonoBehaviour {
 				}
 			}
 		}
-		//-------------------------------------
+		//-------------------------------------------------------------------------------------------------------------------------------
+
+		//音に反応する処理----------------------------------------------------------------------------------------------------------------
+		if (!_animController.CheckAttacking () && _agent.velocity.magnitude <= 0) {	//戦闘待機状態でない　＆　移動してない時
+			int count = _soundReaction.GetAudioSourceList().Count;	//_audioSountListの数
+			Transform soundTrans = transform;						//聞こえた音のtransformを格納する変数
+			bool setFlag = false;									//soundTransformに値を格納したか確認するフラグ
+			//音が聞こえているか確認---------------------------------------------------------
+			for (int i = 0; i < count; i++) {
+				if (_soundReaction.Hear (i)) {
+					Transform trans = _soundReaction.GetAudioSourceList () [i].transform;
+					if (!setFlag
+					    || Vector3.Distance (transform.position, trans.position) < Vector3.Distance (transform.position, soundTrans.position)) {	//より近い方をsoundTransformに格納
+						soundTrans = trans;
+						setFlag = true;
+					}
+				}
+			}
+			//-------------------------------------------------------------------------------
+			//音の聞こえた方向を向く処理-----------------------------------------
+			if (setFlag) {
+				FaceTarget (soundTrans);
+				Debug.Log (gameObject.name + " here " + soundTrans.gameObject);
+			}
+			//------------------------------------------------------------------
+		}
+		//-------------------------------------------------------------------------------------------------------------------------------
 	}
 
 
