@@ -110,6 +110,12 @@ public class GoblinAnimationController : MonoBehaviour
 	{
 		_animator.SetTrigger("death");
 	}
+
+	//--nameのアニメーションが再生中かどうかを返す関数
+	public bool IsPlaying( string name ) {
+		AnimatorClipInfo[] animatorClipInfo = _animator.GetCurrentAnimatorClipInfo (0);	//どうやらanimatorClipInfoの参照を渡すように配列にしているだけで要素数は1のみみたい。
+		return animatorClipInfo[0].clip.name == name;
+	}
 	//-----------------------------------
 	//-----------------------------------
 }
