@@ -24,7 +24,7 @@ public class Spider : MonoBehaviour {
 	// Use this for initialization
 	void Start () {
         rb = GetComponent<Rigidbody>( );
-        child = transform.FindChild( "spider_myOldOne" ).gameObject;
+        child = transform.Find( "spider_myOldOne" ).gameObject;
         ch_anim = child.GetComponent<Animation>( );
 
 		tra_me = GetComponent<Transform>( );

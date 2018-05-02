@@ -97,12 +97,6 @@ public class EnemyController : MonoBehaviour {
 		case State.COMBIN_IDLE:
 			CombatIdleAction ();
 			break;
-		case State.ATTACK1:
-			break;
-		case State.ATTACK2:
-			break;
-		case State.ATTACK3:
-			break;
 		case State.BLOCK:
 			BlockAction ();
 			break;
@@ -128,142 +122,6 @@ public class EnemyController : MonoBehaviour {
 	}
 
 
-	//--エネミーの行動を表す関数
-	void Act()
-	{
-		float distance = Vector3.Distance(_target.position, transform.position);
-		//_targetの位置に移動する処理----------------------------------------------------
-		if (!_animController.CheckAttacking () && !_findedBomb) {	//戦闘待機状態では移動しない＆爆弾があるときは爆弾退避を優先
-			if (!_lockOn) {		//ロックオン前処理
-				//視野内に_targetがいたら行動する処理-----------
-				if (_fieldOfView.IsInFieldOfView (_target)) {
-					_enemyNav.MoveToTarget (_target.position);
-					if (distance <= _lockOnRadius) {
-						_lockOn = true;
-					}
-				}
-				//---------------------------------------------
-			} else { 			//ロックオン時処理			
-				if (distance <= _lockOnRadius) {
-					FaceTarget (_target);	//向きを変えないと移動しないことがある(爆弾使用時)ので向きを変える処理
-					_enemyNav.MoveToTarget (_target.position);
-				} else {
-					_lockOn = false;
-				}
-			}
-			//加勢に入る処理------------------------------------------------------------------------------------------------
-			for (int i = 0; i < _goblinList.Count; i++) {
-				GoblinAnimationController goblinListAnim = _goblinList [i].GetComponent<EnemyController> ()._animController;
-				if (goblinListAnim.CheckAttacking ()) {
-					if (distance <= _assistRadius) {
-						_enemyNav.MoveToTarget (_target.position);
-						break;
-					}
-				}
-			}
-			//-------------------------------------------------------------------------------------------------------------
-		}
-		//-------------------------------------------------------------------------------
-
-		//至近距離時の処理---------------------------------------------------------
-		if (distance <= _agent.stoppingDistance) {
-			if (_fieldOfView.IsInFieldOfView ( _target )) {	//視野内にいる時のみ向きを変え、攻撃待機状態に
-				FaceTarget (_target);
-			_animController.ChangeAttacking (true);
-			}
-		} else {
-			_animController.ChangeAttacking (false);
-		}
-		//------------------------------------------------------------------------
-
-		//walk・idle・runアニメーション処理---------------------------------
-		float speedPercent = _agent.velocity.magnitude * 5 / _agent.speed;
-		_animController.MoveAnim ( speedPercent );
-		//---------------------------------------------------
-
-		//攻撃-------------------------------------
-		if (_animController.CheckAttacking ()) {
-			_animController.AttackAnim ();
-		}
-		//------------------------------------------
-
-		//防御------------------------------------
-		if (Input.GetKey (KeyCode.G) && _animController.CheckAttacking ()) {	//キーコードの所をプレイヤーの攻撃しているかどうかの判定に変更
-			_animController.ChangeBlock (true);
-		} else {
-			_animController.ChangeBlock (false);
-		}
-		//-----------------------------------------
-
-		//ノックバック---------------------------
-		if (Input.GetKeyDown (KeyCode.N) && _animController.CheckBlock ()) {	//のちのちOnCollisionEnterでやると思われる
-			_animController.BlockHitAnim ();
-		}
-		//---------------------------------------
-
-		//死亡-----------------------------------
-		if (_enemyHealth.isDead) {
-			_animController.DeadAnim ( );
-			Debug.Log (gameObject.name + "death");
-			enabled = false;	//死亡したら処理をやめる
-		} 
-		//---------------------------------------
-
-		if (Input.GetKeyDown (KeyCode.Alpha0)) {	//デバッグ用ダメージ処理
-			_enemyHealth.TakeDamage (1f);
-		}
-
-		//爆弾を見たら逃げる処理---------------------------------------------------------------------------------------------------------
-		//※逃げてる途中で爆弾がなくなったらどうなるか要検証
-		if (Input.GetKeyDown (KeyCode.B) && _fieldOfView.IsInFieldOfView (_target)) {
-			SetFindedBomb (_target);	//デバッグ用として_targetを爆弾とみなす（のちに外部のスクリプトから爆弾をセットする処理を記述）
-		}
-		if (_findedBomb) {
-			if (_fieldOfView.IsInFieldOfView (_findedBomb) && !_animController.CheckAttacking ()) {	//攻撃状態じゃないときに爆弾を見つけたら逃げる
-				float escapeDistance = 20;
-				Vector3 dir = transform.position - _findedBomb.position;
-				if (dir == Vector3.zero) {	//dirが零ベクトルだった時の処理
-					dir = Vector3.forward;
-				}
-				_enemyNav.MoveToTarget (_findedBomb.position + dir.normalized * escapeDistance);
-			}
-			if (_agent.velocity.magnitude <= 0) {	//逃げた後爆弾のあった方向を向く処理
-				FaceTarget (_findedBomb);
-				Vector3 vecA = transform.InverseTransformDirection ((_findedBomb.position - transform.position).normalized);
-				Vector3 vecB = transform.InverseTransformDirection (transform.forward);
-				if (Vector3.Angle (vecA, vecB) <= 1.0f) {
-					SetFindedBomb (null);
-				}
-			}
-		}
-		//-------------------------------------------------------------------------------------------------------------------------------
-
-		//音に反応する処理----------------------------------------------------------------------------------------------------------------
-		if (!_animController.CheckAttacking () && _agent.velocity.magnitude <= 0) {	//戦闘待機状態でない　＆　移動してない時
-			int count = _soundReaction.GetAudioSourceList().Count;	//_audioSountListの数
-			Transform soundTrans = transform;						//聞こえた音のtransformを格納する変数
-			bool setFlag = false;									//soundTransformに値を格納したか確認するフラグ
-			//音が聞こえているか確認---------------------------------------------------------
-			for (int i = 0; i < count; i++) {
-				if (_soundReaction.Hear (i)) {
-					Transform trans = _soundReaction.GetAudioSourceList () [i].transform;
-					if (!setFlag
-					    || Vector3.Distance (transform.position, trans.position) < Vector3.Distance (transform.position, soundTrans.position)) {	//より近い方をsoundTransformに格納
-						soundTrans = trans;
-						setFlag = true;
-					}
-				}
-			}
-			//-------------------------------------------------------------------------------
-			//音の聞こえた方向を向く処理-----------------------------------------
-			if (setFlag) {
-				FaceTarget (soundTrans);
-				Debug.Log (gameObject.name + " here " + soundTrans.gameObject);
-			}
-			//------------------------------------------------------------------
-		}
-		//-------------------------------------------------------------------------------------------------------------------------------
-	}
 
 
 	//--targetの方向を向く関数
@@ -373,7 +231,9 @@ public class EnemyController : MonoBehaviour {
 
 		//至近距離時の処理---------------------------------------------------------
 		float distance = Vector3.Distance(_target.position, transform.position);
-		if (distance > _agent.stoppingDistance) {
+		if (distance <= _agent.stoppingDistance) {
+			FaceTarget (_target);
+		} else {
 			_animController.ChangeAttacking (false);
 		}
 		//------------------------------------------------------------------------
@@ -472,6 +332,145 @@ public class EnemyController : MonoBehaviour {
 	}
 }
 
+
+
+//  //--エネミーの行動を表す関数
+//	void Act()
+//	{
+//		float distance = Vector3.Distance(_target.position, transform.position);
+//		//_targetの位置に移動する処理----------------------------------------------------
+//		if (!_animController.CheckAttacking () && !_findedBomb) {	//戦闘待機状態では移動しない＆爆弾があるときは爆弾退避を優先
+//			if (!_lockOn) {		//ロックオン前処理
+//				//視野内に_targetがいたら行動する処理-----------
+//				if (_fieldOfView.IsInFieldOfView (_target)) {
+//					_enemyNav.MoveToTarget (_target.position);
+//					if (distance <= _lockOnRadius) {
+//						_lockOn = true;
+//					}
+//				}
+//				//---------------------------------------------
+//			} else { 			//ロックオン時処理			
+//				if (distance <= _lockOnRadius) {
+//					FaceTarget (_target);	//向きを変えないと移動しないことがある(爆弾使用時)ので向きを変える処理
+//					_enemyNav.MoveToTarget (_target.position);
+//				} else {
+//					_lockOn = false;
+//				}
+//			}
+//			//加勢に入る処理------------------------------------------------------------------------------------------------
+//			for (int i = 0; i < _goblinList.Count; i++) {
+//				GoblinAnimationController goblinListAnim = _goblinList [i].GetComponent<EnemyController> ()._animController;
+//				if (goblinListAnim.CheckAttacking ()) {
+//					if (distance <= _assistRadius) {
+//						_enemyNav.MoveToTarget (_target.position);
+//						break;
+//					}
+//				}
+//			}
+//			//-------------------------------------------------------------------------------------------------------------
+//		}
+//		//-------------------------------------------------------------------------------
+//		
+//		//至近距離時の処理---------------------------------------------------------
+//		if (distance <= _agent.stoppingDistance) {
+//			if (_fieldOfView.IsInFieldOfView ( _target )) {	//視野内にいる時のみ向きを変え、攻撃待機状態に
+//				FaceTarget (_target);
+//				_animController.ChangeAttacking (true);
+//			}
+//		} else {
+//			_animController.ChangeAttacking (false);
+//		}
+//		//------------------------------------------------------------------------
+//		
+//		//walk・idle・runアニメーション処理---------------------------------
+//		float speedPercent = _agent.velocity.magnitude * 5 / _agent.speed;
+//		_animController.MoveAnim ( speedPercent );
+//		//---------------------------------------------------
+//		
+//		//攻撃-------------------------------------
+//		if (_animController.CheckAttacking ()) {
+//			_animController.AttackAnim ();
+//		}
+//		//------------------------------------------
+//		
+//		//防御------------------------------------
+//		if (Input.GetKey (KeyCode.G) && _animController.CheckAttacking ()) {	//キーコードの所をプレイヤーの攻撃しているかどうかの判定に変更
+//			_animController.ChangeBlock (true);
+//		} else {
+//			_animController.ChangeBlock (false);
+//		}
+//		//-----------------------------------------
+//		
+//		//ノックバック---------------------------
+//		if (Input.GetKeyDown (KeyCode.N) && _animController.CheckBlock ()) {	//のちのちOnCollisionEnterでやると思われる
+//			_animController.BlockHitAnim ();
+//		}
+//		//---------------------------------------
+//		
+//		//死亡-----------------------------------
+//		if (_enemyHealth.isDead) {
+//			_animController.DeadAnim ( );
+//			Debug.Log (gameObject.name + "death");
+//			enabled = false;	//死亡したら処理をやめる
+//		} 
+//		//---------------------------------------
+//		
+//		if (Input.GetKeyDown (KeyCode.Alpha0)) {	//デバッグ用ダメージ処理
+//			_enemyHealth.TakeDamage (1f);
+//		}
+//		
+//		//爆弾を見たら逃げる処理---------------------------------------------------------------------------------------------------------
+//		//※逃げてる途中で爆弾がなくなったらどうなるか要検証
+//		if (Input.GetKeyDown (KeyCode.B) && _fieldOfView.IsInFieldOfView (_target)) {
+//			SetFindedBomb (_target);	//デバッグ用として_targetを爆弾とみなす（のちに外部のスクリプトから爆弾をセットする処理を記述）
+//		}
+//		if (_findedBomb) {
+//			if (_fieldOfView.IsInFieldOfView (_findedBomb) && !_animController.CheckAttacking ()) {	//攻撃状態じゃないときに爆弾を見つけたら逃げる
+//				float escapeDistance = 20;
+//				Vector3 dir = transform.position - _findedBomb.position;
+//				if (dir == Vector3.zero) {	//dirが零ベクトルだった時の処理
+//					dir = Vector3.forward;
+//				}
+//				_enemyNav.MoveToTarget (_findedBomb.position + dir.normalized * escapeDistance);
+//			}
+//			if (_agent.velocity.magnitude <= 0) {	//逃げた後爆弾のあった方向を向く処理
+//				FaceTarget (_findedBomb);
+//				Vector3 vecA = transform.InverseTransformDirection ((_findedBomb.position - transform.position).normalized);
+//				Vector3 vecB = transform.InverseTransformDirection (transform.forward);
+//				if (Vector3.Angle (vecA, vecB) <= 1.0f) {
+//					SetFindedBomb (null);
+//				}
+//			}
+//		}
+//		//-------------------------------------------------------------------------------------------------------------------------------
+//		
+//		//音に反応する処理----------------------------------------------------------------------------------------------------------------
+//		if (!_animController.CheckAttacking () && _agent.velocity.magnitude <= 0) {	//戦闘待機状態でない　＆　移動してない時
+//			int count = _soundReaction.GetAudioSourceList().Count;	//_audioSountListの数
+//			Transform soundTrans = transform;						//聞こえた音のtransformを格納する変数
+//			bool setFlag = false;									//soundTransformに値を格納したか確認するフラグ
+//			//音が聞こえているか確認---------------------------------------------------------
+//			for (int i = 0; i < count; i++) {
+//				if (_soundReaction.Hear (i)) {
+//					Transform trans = _soundReaction.GetAudioSourceList () [i].transform;
+//					if (!setFlag
+//						|| Vector3.Distance (transform.position, trans.position) < Vector3.Distance (transform.position, soundTrans.position)) {	//より近い方をsoundTransformに格納
+//						soundTrans = trans;
+//						setFlag = true;
+//					}
+//				}
+//			}
+//			//-------------------------------------------------------------------------------
+//			//音の聞こえた方向を向く処理-----------------------------------------
+//			if (setFlag) {
+//				FaceTarget (soundTrans);
+//				Debug.Log (gameObject.name + " here " + soundTrans.gameObject);
+//			}
+//			//------------------------------------------------------------------
+//		}
+//		//-------------------------------------------------------------------------------------------------------------------------------
+//	}
+//
 /*
 	//--視野内に_targetがいたらfunctionName関数を呼ぶ関数(現在未使用)
 void ActInField( string functionName, object value )

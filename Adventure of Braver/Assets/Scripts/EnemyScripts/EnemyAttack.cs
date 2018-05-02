@@ -6,7 +6,7 @@ using UnityEngine;
 //
 //使用方法：攻撃判定に使うコライダーのついたゲームオブジェクトにアタッチ
 public class EnemyAttack : MonoBehaviour {
-	[SerializeField] Collider _attackTrigger;	//攻撃の当たり判定に使うトリガー
+	Collider _attackTrigger;	//攻撃の当たり判定に使うトリガー
 	[SerializeField] EnemyController _enemyController = null;
 	[SerializeField] string[] _attackStateName = new string[3];
 
