@@ -14,14 +14,14 @@ public class GoblinAnimationController : MonoBehaviour
 	const int ATTACK_TYPE = 3;							//攻撃のバリエーション数
 
 	Animator _animator;
-	NavMeshAgent _agent;
+	//NavMeshAgent _agent;
 	float _attackTime;		//攻撃インターバル
 
 	// Use this for initialization
 	void Start ()
 	{
 		_animator = GetComponent<Animator> ();
-		_agent = GetComponent<NavMeshAgent>();
+		//_agent = GetComponent<NavMeshAgent>();
 		_attackTime = 0;
 	}
 
