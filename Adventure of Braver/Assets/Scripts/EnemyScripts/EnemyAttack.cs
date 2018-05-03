@@ -26,18 +26,11 @@ public class EnemyAttack : MonoBehaviour {
 
 	void OnTriggerEnter( Collider collider ) {
 		if (collider.gameObject.tag != "Player") return;
-		switch (_enemyController.GetState ()) {
-		case EnemyController.State.ATTACK1:
-			Debug.Log ("attack1 hit!");
-			break;
-		case EnemyController.State.ATTACK2:
-			Debug.Log ("attack2 hit!");
-			break;
-		case EnemyController.State.ATTACK3:
-			Debug.Log ("attack3 hit!");
-			break;
-		default:
-			break;
+		for (int i = 0; i < _attackStateName.Length; i++) {
+			if (_enemyController.GetState ().ToString () == _attackStateName [i]) {
+				Debug.Log (_attackStateName[i] + " hit!");
+				break;
+			}
 		}
 	}
 

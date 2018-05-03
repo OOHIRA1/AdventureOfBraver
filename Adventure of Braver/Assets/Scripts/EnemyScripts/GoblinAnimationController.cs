@@ -9,7 +9,7 @@ using UnityEngine.AI;
 [RequireComponent(typeof(Animator))]
 public class GoblinAnimationController : MonoBehaviour
 {
-	const float locomotionAnimationSmootTime = .05f;
+	const float LOCOMOTION_ANIMATION_SMOOTH_TIME = .05f;
 	const float ATTACK_INTERVAL = 5f;					//攻撃インターバル
 	const int ATTACK_TYPE = 3;							//攻撃のバリエーション数
 
@@ -34,13 +34,13 @@ public class GoblinAnimationController : MonoBehaviour
 	}
 
 
-	//---------------------
-	//--public関数
-	//---------------------
+	//====================================================================================================
+	//public関数
+	//=====================================================================================================
 	//--移動・待機アニメーションをする関数
 	public void MoveAnim( float speedPercent )
 	{
-		_animator.SetFloat("speedPercent", speedPercent, locomotionAnimationSmootTime, Time.deltaTime);
+		_animator.SetFloat("speedPercent", speedPercent, LOCOMOTION_ANIMATION_SMOOTH_TIME, Time.deltaTime);
 	}
 
 
@@ -116,6 +116,6 @@ public class GoblinAnimationController : MonoBehaviour
 		AnimatorClipInfo[] animatorClipInfo = _animator.GetCurrentAnimatorClipInfo (0);	//どうやらanimatorClipInfoの参照を渡すように配列にしているだけで要素数は1のみみたい。
 		return animatorClipInfo[0].clip.name == name;
 	}
-	//-----------------------------------
-	//-----------------------------------
+	//==============================================================================================================================================
+	//==============================================================================================================================================
 }
