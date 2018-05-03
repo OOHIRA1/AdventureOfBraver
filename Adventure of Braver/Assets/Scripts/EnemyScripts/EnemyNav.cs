@@ -10,12 +10,12 @@ using UnityEngine.AI;
 public class EnemyNav : MonoBehaviour
 {
     NavMeshAgent navAgent;
-    Transform target;
+    //Transform target;
 
     private void Start()
     {
         navAgent = GetComponent<NavMeshAgent>();
-        target = PlayerManager.instance.player.transform;
+        //target = PlayerManager.instance.player.transform;
     }
 
 
