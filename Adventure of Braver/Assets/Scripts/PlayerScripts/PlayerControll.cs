@@ -24,8 +24,9 @@ public class PlayerControll : MonoBehaviour {
 	[SerializeField] float _maxWalkSpeed = 0;		//歩く速さ
 	[SerializeField] float _maxRunSpeed  = 0;		//走る速さ
 	[SerializeField] bool _isRuning = false;	//走るかどうかのフラグ
-	[SerializeField] State _state;
+	[SerializeField] State _state;					//プレイヤーのState
 	[SerializeField] float _velocityY = 0;
+
 
 
 	//------------------------------------
@@ -42,7 +43,6 @@ public class PlayerControll : MonoBehaviour {
 	//------------------------------------
 	public void SetState ( State state ) {
 		_state = state;
-		_isRuning = false;
 	}
 	//------------------------------------
 	//------------------------------------
@@ -57,12 +57,30 @@ public class PlayerControll : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
+		bool attackButtonClicked = Input.GetKeyDown (KeyCode.JoystickButton1) || Input.GetMouseButton (0) || Input.GetKeyDown (KeyCode.Return);	//攻撃をするボタン
+
 		switch (_state) {
 		case State.LOCOMOTION:
 			LocomotionAction ();
+			if (attackButtonClicked) {
+				_animController.AttackSingle ();
+			}
 			break;
 		case State.ATTACK_WAITING:
 			AttackWaitingAction ();
+			if (attackButtonClicked) {
+				_animController.AttackSingle ();
+			}
+			break;
+		case State.ATTACK_SINGLE:
+			if (attackButtonClicked) {
+				_animController.AttackDouble ();
+			}
+			break;
+		case State.ATTACK_DOUBLE:
+			if (attackButtonClicked) {
+				_animController.AttackSingle ();
+			}
 			break;
 		case State.DEATH:
 			DeathAction ();
@@ -74,6 +92,7 @@ public class PlayerControll : MonoBehaviour {
 			SetState ( State.DEATH );
 		UpdateState ();
 		Debug.Log (gameObject.name + " State : " + _state);
+
 	}
 
 
@@ -152,6 +171,18 @@ public class PlayerControll : MonoBehaviour {
 		//-----------------------------------------------------------
 
 		_charactorController.Move (velocity * Time.deltaTime);
+	}
+
+
+	//--攻撃をする関数
+	void Attack() {
+		_animController.AttackSingle ();
+		if (_animController.IsPlaying ("AttackSingle")) {
+			_animController.AttackDouble ();
+		}
+		if (_animController.IsPlaying ("AttackDouble")) {
+			_animController.AttackSingle ();
+		}
 	}
 
 
