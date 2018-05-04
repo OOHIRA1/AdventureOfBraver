@@ -12,7 +12,6 @@ using UnityEngine.AI;
 [RequireComponent(typeof(FieldOfView))]
 [RequireComponent(typeof(EnemySoundReaction))]
 public class EnemyController : MonoBehaviour {
-	const float locomotionAnimationSmootTime = .05f;
 
 	public enum State {
 		LOCOMOTION,
@@ -116,7 +115,7 @@ public class EnemyController : MonoBehaviour {
 			_enemyHealth.TakeDamage (1f);
 		}
 		UpdateState ();
-		Debug.Log (_state);
+		Debug.Log (gameObject.name + " State : " + _state);
 		//Act ();
 		//UpdateGoblinList ();
 	}
@@ -278,7 +277,7 @@ public class EnemyController : MonoBehaviour {
 	void DeathAction() {
 		//死亡-----------------------------------
 			_animController.DeadAnim ( );
-			Debug.Log (gameObject.name + "death");
+			Debug.Log (gameObject.name + " death");
 			enabled = false;	//死亡したら処理をやめる
 		//---------------------------------------
 
