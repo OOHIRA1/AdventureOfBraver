@@ -21,6 +21,7 @@ public class PlayerAnimationControll : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
+		//デバッグ用----------------------------------
 		if (Input.GetKeyDown (KeyCode.F))
 			AttackSingle ();
 		if (Input.GetKeyDown (KeyCode.C))
@@ -31,11 +32,14 @@ public class PlayerAnimationControll : MonoBehaviour {
 			_animator.SetTrigger ("skillJumpAttack");
 		if (Input.GetKeyDown (KeyCode.H))
 			AttackWindWheel ();
-		if (Input.GetKeyDown (KeyCode.Q))
-		if ( !CheckAttacking() )
-			ChangeAttacking ( true );
-		else
-			ChangeAttacking ( false );
+		if (Input.GetKeyDown (KeyCode.Q)) {
+			if (!CheckAttacking ()) {
+				ChangeAttacking (true);
+			} else {
+				ChangeAttacking (false);
+			}
+		}
+		//---------------------------------------------
 		if (_attackTime > 0) {
 			_attackTime -= Time.deltaTime;
 		}
@@ -79,14 +83,14 @@ public class PlayerAnimationControll : MonoBehaviour {
 	//--攻撃待機状態のオンオフをする関数
 	public void ChangeAttacking( bool x )
 	{
-		_animator.SetBool ("attackingWaiting", x);
+		_animator.SetBool ("attackWaiting", x);
 	}
 
 
 	//--攻撃待機状態かどうかを確認する関数
 	public bool CheckAttacking( )
 	{
-		return _animator.GetBool ("attackingWaiting");
+		return _animator.GetBool ("attackWaiting");
 	}
 
 
