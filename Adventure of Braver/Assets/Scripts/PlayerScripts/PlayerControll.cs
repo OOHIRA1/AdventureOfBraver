@@ -21,6 +21,7 @@ public class PlayerControll : MonoBehaviour {
 
 	CharacterController _charactorController;
 	PlayerAnimationControll _animController;
+	Transform _cameraTransform;
 	[SerializeField] float _maxWalkSpeed = 0;		//歩く速さ
 	[SerializeField] float _maxRunSpeed  = 0;		//走る速さ
 	[SerializeField] bool _isRuning = false;	//走るかどうかのフラグ
@@ -52,6 +53,7 @@ public class PlayerControll : MonoBehaviour {
 	void Start () {
 		_charactorController = GetComponent<CharacterController> ();
 		_animController = GetComponent<PlayerAnimationControll> ();
+		_cameraTransform = Camera.main.transform;
 		_state = State.LOCOMOTION;
 	}
 	
@@ -128,7 +130,7 @@ public class PlayerControll : MonoBehaviour {
 		//Debug.Log(moveDirection);
 
 		//向きを変える処理-----------------------------------
-		transform.LookAt( transform.position + moveDirection );
+		//transform.LookAt( transform.position + moveDirection );
 		//--------------------------------------------------
 
 
@@ -150,7 +152,10 @@ public class PlayerControll : MonoBehaviour {
 		} else {
 			velocity = (inputPower * _maxWalkSpeed) * moveDirection;
 		}
-
+		//Vector3 a = _cameraTransform.right * velocity.x + _cameraTransform.forward * velocity.z;
+		//velocity = transform.InverseTransformDirection (a);
+		velocity = _cameraTransform.TransformVector(velocity);
+		transform.LookAt( transform.position + velocity.normalized );
 		//------------------------------------------------------------------------------
 
 
